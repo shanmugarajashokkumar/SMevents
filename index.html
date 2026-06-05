@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMevents – Staff Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0c10;--surface:#12151c;--surface2:#1a1e28;--border:#252a38;--accent:#f5a623;--accent2:#e8460a;--text:#eef0f6;--muted:#7a8099;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--purple:#a855f7;--radius:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+
+/* LOGIN */
+#loginPage{display:flex;min-height:100vh;align-items:center;justify-content:center;position:relative}
+.login-glow{position:absolute;width:520px;height:520px;background:radial-gradient(circle,rgba(245,166,35,.13) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:52px 48px;width:430px;position:relative;z-index:1;animation:fadeUp .6s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:36px}
+.brand-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:#fff}
+.brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px}
+.brand-name span{color:var(--accent)}
+.login-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;margin-bottom:6px}
+.login-sub{color:var(--muted);font-size:14px;margin-bottom:32px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.fi{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;appearance:none}
+.fi:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:14px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;margin-top:6px;transition:opacity .2s,transform .15s}
+.login-btn:hover{opacity:.9;transform:translateY(-1px)}
+.login-err{color:var(--red);font-size:13px;margin-top:10px;text-align:center;min-height:18px}
+.login-footer{text-align:center;color:var(--muted);font-size:12px;margin-top:28px}
+
+/* APP SHELL */
+#app{display:none;flex-direction:column;min-height:100vh}
+#app.visible{display:flex}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:64px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200}
+.topbar-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.3px}
+.topbar-brand span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.user-chip{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:50px;padding:6px 14px 6px 8px;font-size:13px;font-weight:500}
+.avatar{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;flex-shrink:0}
+.badge-role{font-size:10px;background:rgba(245,166,35,.15);color:var(--accent);border-radius:4px;padding:2px 6px;font-weight:600}
+.logout-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* NOTIFICATION BELL */
+.notif-btn{position:relative;background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s}
+.notif-btn:hover{border-color:var(--accent)}
+.notif-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);animation:pop .3s ease}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.notif-panel{position:absolute;top:70px;right:24px;width:370px;background:var(--surface);border:1px solid var(--border);border-radius:16px;z-index:400;box-shadow:0 20px 60px rgba(0,0,0,.55);max-height:500px;overflow:hidden;display:flex;flex-direction:column;animation:fadeUp .25s ease both}
+.notif-panel.hidden{display:none}
+.notif-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-head h4{font-family:'Syne',sans-serif;font-weight:700;font-size:15px}
+.notif-clear{font-size:12px;color:var(--accent);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif}
+.notif-list{overflow-y:auto;flex:1}
+.notif-item{padding:13px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;transition:background .15s}
+.notif-item:hover{background:var(--surface2)}
+.notif-item.unread{border-left:3px solid var(--accent)}
+.notif-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.notif-text{font-size:13px;line-height:1.5}
+.notif-text strong{color:var(--text);display:block;margin-bottom:1px}
+.notif-text span{color:var(--muted);font-size:12px}
+.notif-empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+
+/* TABS */
+.nav-tabs{display:flex;gap:4px;padding:10px 24px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab-btn{padding:8px 16px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.tab-btn:hover{background:var(--surface2);color:var(--text)}
+.tab-btn.active{background:var(--surface2);color:var(--accent);border:1px solid rgba(245,166,35,.25)}
+.tab-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:none}
+.tab-btn.active .tab-dot{display:block}
+.tab-req-badge{background:var(--red);color:#fff;border-radius:50%;width:17px;height:17px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;margin-left:2px}
+
+/* CONTENT */
+.content{flex:1;padding:28px;max-width:1200px;margin:0 auto;width:100%}
+.section{display:none;animation:fadeUp .35s ease both}
+.section.active{display:block}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.sec-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700}
+.sec-sub{color:var(--muted);font-size:13px;margin-top:2px}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.s-green::before{background:var(--green)}.s-amber::before{background:var(--accent)}.s-red::before{background:var(--red)}.s-blue::before{background:var(--blue)}
+.stat-num{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;margin-bottom:4px}
+.stat-label{color:var(--muted);font-size:12px;font-weight:500}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--surface2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:14px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.pill-green{background:rgba(34,197,94,.12);color:var(--green)}.pill-red{background:rgba(239,68,68,.12);color:var(--red)}.pill-amber{background:rgba(245,166,35,.12);color:var(--accent)}.pill-blue{background:rgba(59,130,246,.12);color:var(--blue)}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border-radius:9px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--red)}.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-green{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:var(--green)}.btn-green:hover{background:rgba(34,197,94,.22)}
+
+/* ATTENDANCE */
+.att-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.att-grid{grid-template-columns:1fr}}
+.checkin-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;text-align:center}
+.clock-display{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;letter-spacing:-2px;color:var(--accent);margin:10px 0 4px}
+.date-display{color:var(--muted);font-size:13px;margin-bottom:28px}
+.big-btn{width:140px;height:140px;border-radius:50%;border:3px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-weight:800;font-size:15px;cursor:pointer;transition:all .3s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin:0 auto}
+.big-btn.in{border-color:var(--green);color:var(--green);box-shadow:0 0 28px rgba(34,197,94,.2)}
+.big-btn.out{border-color:var(--red);color:var(--red);box-shadow:0 0 28px rgba(239,68,68,.2)}
+.big-btn.done{border-color:var(--border);color:var(--muted);cursor:not-allowed;opacity:.5}
+.big-btn .bicon{font-size:28px}
+.checkin-status{font-size:13px;color:var(--muted);margin-top:14px;line-height:1.7}
+.checkin-status strong{color:var(--text)}
+.timing-note{font-size:12px;color:var(--muted);margin-top:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;line-height:1.7}
+
+/* LOCATION */
+.map-container{width:100%;height:340px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.map-container iframe{width:100%;height:100%;border:none;border-radius:12px;filter:invert(90%) hue-rotate(180deg)}
+.live-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.25);animation:pulse 1.6s infinite;display:inline-block}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,.25)}50%{box-shadow:0 0 0 8px rgba(34,197,94,.05)}}
+.loc-name-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-top:14px}
+.loc-name-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.loc-name-val{font-size:15px;font-weight:600}
+
+/* PAYMENT */
+.pay-staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px;margin-bottom:20px}
+.staff-pay-card{background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;text-align:center}
+.staff-pay-card:hover{border-color:var(--accent)}
+.staff-pay-card.selected{border-color:var(--accent);background:rgba(245,166,35,.07)}
+.sp-name{font-weight:600;font-size:14px;margin-top:8px}
+.sp-role{font-size:12px;color:var(--muted);margin-top:2px}
+.upload-zone{border:2px dashed var(--border);border-radius:14px;padding:46px 24px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(245,166,35,.04)}
+.upload-zone input[type=file]{display:none}
+.upload-icon{font-size:40px;margin-bottom:12px}
+.upload-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:5px}
+.upload-sub{color:var(--muted);font-size:13px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:18px}
+.gitem{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;animation:fadeUp .3s ease both}
+.gitem img{width:100%;height:108px;object-fit:cover;display:block;cursor:zoom-in}
+.gitem .glabel{padding:8px 10px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gitem .gdel{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.65);border:none;color:var(--red);border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.gitem:hover .gdel{opacity:1}
+
+/* PERMISSION */
+.perm-card{background:rgba(245,166,35,.06);border:1px solid rgba(245,166,35,.22);border-radius:12px;padding:18px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;animation:fadeUp .3s ease both}
+.perm-info{display:flex;align-items:center;gap:12px}
+.perm-name{font-weight:600;font-size:14px}
+.perm-detail{font-size:12px;color:var(--muted);margin-top:2px}
+.perm-actions{display:flex;gap:8px}
+
+/* MODAL */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px;width:460px;max-width:95vw;animation:fadeUp .3s ease both;max-height:90vh;overflow-y:auto}
+.modal h3{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;margin-bottom:22px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+
+/* SEARCH */
+.search-row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.search-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;min-width:180px}
+.search-input:focus{border-color:var(--accent)}
+
+/* PAYMENT DETAIL */
+.pay-detail-header{display:flex;align-items:center;gap:14px;padding:18px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);margin-bottom:16px}
+.pay-detail-avatar{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#fff;flex-shrink:0}
+.inf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.inf-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.inf-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.inf-val{font-size:14px;font-weight:600}
+
+/* TOAST */
+#toast{position:fixed;bottom:28px;right:28px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;z-index:9000;transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);max-width:320px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.t-green{border-color:rgba(34,197,94,.4)}#toast.t-red{border-color:rgba(239,68,68,.4)}#toast.t-blue{border-color:rgba(59,130,246,.4)}
+
+/* LIGHTBOX */
+#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9998;align-items:center;justify-content:center;cursor:zoom-out}
+#lightbox.open{display:flex}
+#lightbox img{max-width:90vw;max-height:90vh;border-radius:12px}
+
+.divider{height:1px;background:var(--border);margin:20px 0}
+</style>
+</head>
+<body>
+
+<!-- ════════════ LOGIN ════════════ -->
+<div id="loginPage">
+  <div class="login-glow"></div>
+  <div class="login-box">
+    <div class="brand">
+      <div class="brand-icon">SM</div>
+      <div class="brand-name"><span>SM</span>events</div>
+    </div>
+    <div class="login-title">Welcome back 👋</div>
+    <div class="login-sub">Sign in to your staff portal</div>
+    <div class="field"><label>Username</label><input class="fi" id="loginUser" placeholder="Enter username" autocomplete="off"></div>
+    <div class="field"><label>Password</label><input class="fi" type="password" id="loginPass" placeholder="Enter password"></div>
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-footer">SMevents Staff Portal · Secure Access</div>
+  </div>
+</div>
+
+<!-- ════════════ APP ════════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand"><span>SM</span>events</div>
+    <div class="topbar-right">
+      <!-- Bell: admin only -->
+      <div id="notifWrap" style="position:relative;display:none">
+        <div class="notif-btn" onclick="toggleNotifPanel()">🔔
+          <div class="notif-badge" id="notifBadge" style="display:none">0</div>
+        </div>
+        <div class="notif-panel hidden" id="notifPanel">
+          <div class="notif-head"><h4>Notifications</h4><button class="notif-clear" onclick="clearNotifs()">Clear all</button></div>
+          <div class="notif-list" id="notifList"></div>
+        </div>
+      </div>
+      <div class="user-chip">
+        <div class="avatar" id="userAvatar">U</div>
+        <span id="userFullName">User</span>
+        <span class="badge-role" id="userRole">Staff</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- TABS – rendered per role via JS -->
+  <div class="nav-tabs" id="navTabs"></div>
+
+  <div class="content">
+
+    <!-- ── ADMIN: DASHBOARD ── -->
+    <div class="section" id="sec-dashboard">
+      <div class="sec-header">
+        <div><div class="sec-title">Dashboard</div><div class="sec-sub" id="todayDate"></div></div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card s-green"><div class="stat-num" id="statPresent">0</div><div class="stat-label">Present Today</div></div>
+        <div class="stat-card s-red"><div class="stat-num" id="statAbsent">0</div><div class="stat-label">Absent</div></div>
+        <div class="stat-card s-amber"><div class="stat-num" id="statLate">0</div><div class="stat-label">Late</div></div>
+        <div class="stat-card s-blue"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total Staff</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Today's Attendance</div>
+        <div class="table-wrap"><table><thead><tr><th>Staff</th><th>Check-In</th><th>Check-In Location</th><th>Check-Out</th><th>Check-Out Location</th><th>Status</th></tr></thead><tbody id="dashAttBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN: LIVE LOCATION ── -->
+    <div class="section" id="sec-allloc">
+      <div class="sec-header">
+        <div><div class="sec-title">Live Location</div><div class="sec-sub">All staff current locations</div></div>
+        <button class="btn btn-primary" onclick="refreshAllLoc()">🔄 Refresh</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="live-dot"></span>&nbsp; Live Staff Locations</div>
+        <div class="table-wrap"><table><thead><tr><th>Staff</th><th>Current Location</th><th>Status</th><th>Last Updated</th></tr></thead><tbody id="allLocBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN: STAFF MANAGEMENT ── -->
+    <div class="section" id="sec-staff">
+      <div class="sec-header">
+        <div><div class="sec-title">Staff Management</div><div class="sec-sub">Add, edit or remove team members</div></div>
+        <button class="btn btn-primary" onclick="openAddStaff()">+ Add Staff</button>
+      </div>
+      <div class="search-row"><input class="search-input" type="text" placeholder="🔍  Search staff…" oninput="filterStaff(this.value)"></div>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody id="staffBody"></tbody></table></div>
+    </div>
+
+    <!-- ── ADMIN: PAYMENTS ── -->
+    <div class="section" id="sec-payments">
+      <div class="sec-header">
+        <div><div class="sec-title">Post Payment</div><div class="sec-sub">Upload payment details for individual staff</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">👤 Select Staff Member</div>
+        <div class="pay-staff-grid" id="payStaffSelect"></div>
+      </div>
+      <div id="payFormArea" style="display:none">
+        <div class="card">
+          <div class="card-title">💰 Payment Details</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <div class="field"><label>Amount (₹)</label><input class="fi" id="payAmount" placeholder="e.g. 25000"></div>
+            <div class="field"><label>Payment Date</label><input class="fi" type="date" id="payDate"></div>
+          </div>
+          <div class="field"><label>Note / Description</label><input class="fi" id="payNote" placeholder="e.g. May 2025 Salary"></div>
+          <div class="divider"></div>
+          <div class="card-title">📎 Upload Proof (Photo)</div>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('payFile').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="handleDrop(event)">
+            <input type="file" id="payFile" accept="image/*,application/pdf" onchange="handleFiles(this.files)">
+            <div class="upload-icon">📎</div>
+            <div class="upload-title">Drag & Drop or Click to Upload</div>
+            <div class="upload-sub">JPG, PNG, PDF · max 10 MB</div>
+          </div>
+          <div class="gallery" id="payGallery"></div>
+          <div style="margin-top:18px;display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" onclick="submitPayment()">✅ Post Payment</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 All Payment Records</div>
+        <div class="table-wrap"><table><thead><tr><th>Staff</th><th>Amount</th><th>Date</th><th>Note</th><th>Proof</th><th></th></tr></thead><tbody id="payBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN: PERMISSION REQUESTS ── -->
+    <div class="section" id="sec-permissions">
+      <div class="sec-header">
+        <div><div class="sec-title">Permission Requests</div><div class="sec-sub">Staff requesting extra check-in permission</div></div>
+      </div>
+      <div id="permList"></div>
+    </div>
+
+    <!-- ── ADMIN: REPORTS ── -->
+    <div class="section" id="sec-reports">
+      <div class="sec-header">
+        <div><div class="sec-title">Reports</div><div class="sec-sub">Attendance analytics</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
+          <button class="btn btn-danger" onclick="clearAllData()" title="Reset all stored data to defaults">🗑️ Clear All Data</button>
+        </div>
+      </div>
+      <!-- Storage status bar -->
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:13px">
+        <span style="color:var(--green);font-size:16px">💾</span>
+        <span style="color:var(--muted)">All data is saved locally on this device. Records persist across sessions.</span>
+        <span id="storageSize" style="margin-left:auto;color:var(--muted);font-size:12px"></span>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card s-green"><div class="stat-num" id="rptAvg">—</div><div class="stat-label">Avg Attendance %</div></div>
+        <div class="stat-card s-blue"><div class="stat-num" id="rptDays">—</div><div class="stat-label">Days Tracked</div></div>
+        <div class="stat-card s-amber"><div class="stat-num" id="rptLate">—</div><div class="stat-label">Total Late</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Staff Summary</div>
+        <div class="table-wrap"><table><thead><tr><th>Staff</th><th>Present</th><th>Absent</th><th>Late</th><th>Rate</th></tr></thead><tbody id="rptBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ── STAFF: ATTENDANCE ── -->
+    <div class="section" id="sec-attendance">
+      <div class="sec-header">
+        <div><div class="sec-title">My Attendance</div><div class="sec-sub">Daily check-in & check-out</div></div>
+      </div>
+      <div class="att-grid">
+        <div class="checkin-panel">
+          <div style="font-size:13px;color:var(--muted)">Current Time</div>
+          <div class="clock-display" id="liveClock">00:00:00</div>
+          <div class="date-display" id="liveDate">—</div>
+          <button class="big-btn in" id="bigCheckBtn" onclick="toggleCheckIn()">
+            <span class="bicon">✓</span><span id="bigBtnLabel">CHECK IN</span>
+          </button>
+          <div class="checkin-status" id="checkStatus">Not checked in today.</div>
+          <div class="timing-note">
+            ✅ <strong>Present</strong>: Check-in 9:50–10:00 AM · Check-out after 5:59 PM<br>
+            ⚠️ Outside these times = <strong>Late</strong>
+          </div>
+          <div id="permRequestArea" style="display:none;margin-top:16px">
+            <div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:14px;font-size:13px;color:var(--muted)">
+              Daily limit reached (1 check-in + 1 check-out).<br>
+              <button class="btn btn-ghost" style="margin-top:10px;font-size:12px" onclick="requestPermission()">🙋 Request Admin Permission</button>
+              <div id="permReqStatus" style="font-size:12px;margin-top:8px;color:var(--accent)"></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">📅 My Record This Month</div>
+            <div class="table-wrap"><table><thead><tr><th>Date</th><th>In</th><th>In Location</th><th>Out</th><th>Out Location</th><th>Status</th></tr></thead><tbody id="myAttBody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STAFF: LIVE LOCATION ── -->
+    <div class="section" id="sec-location">
+      <div class="sec-header">
+        <div><div class="sec-title">Live Location Tracking</div><div class="sec-sub">Auto-updates every 5 seconds</div></div>
+        <button class="btn btn-primary" onclick="refreshMyLocation()" id="refreshLocBtn">📍 Refresh Location</button>
+      </div>
+
+      <!-- Status Bar -->
+      <div id="locStatusBar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="locDot" style="width:11px;height:11px;border-radius:50%;background:var(--muted);display:inline-block;transition:background .3s"></span>
+          <span style="font-size:14px;font-weight:600" id="locStatusText">Waiting for GPS…</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted)" id="locAutoUpdate">Auto-update: OFF</div>
+      </div>
+
+      <!-- Map -->
+      <div class="map-container" id="mapContainer" style="height:380px;border-radius:14px;margin-bottom:18px">
+        <div style="text-align:center;color:var(--muted)">
+          <div style="font-size:40px;margin-bottom:10px">🗺️</div>
+          <div style="font-size:14px">Allow location access to view map</div>
+        </div>
+      </div>
+
+      <!-- Info Grid -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">📍 Latitude</div>
+          <div style="font-size:16px;font-weight:700;font-family:'Syne',sans-serif" id="dispLat">—</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">📍 Longitude</div>
+          <div style="font-size:16px;font-weight:700;font-family:'Syne',sans-serif" id="dispLng">—</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">🎯 Accuracy</div>
+          <div style="font-size:16px;font-weight:700;font-family:'Syne',sans-serif" id="dispAcc">—</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">🕐 Last Updated</div>
+          <div style="font-size:16px;font-weight:700;font-family:'Syne',sans-serif" id="dispTime">—</div>
+        </div>
+      </div>
+
+      <!-- Location Name Card -->
+      <div style="background:linear-gradient(135deg,rgba(245,166,35,.08),rgba(232,70,10,.05));border:1px solid rgba(245,166,35,.25);border-radius:14px;padding:20px 24px;display:flex;align-items:flex-start;gap:16px">
+        <div style="font-size:32px;line-height:1">📍</div>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Current Location</div>
+          <div style="font-size:17px;font-weight:700;font-family:'Syne',sans-serif;line-height:1.4" id="locNameVal">Fetching location name…</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px" id="locNameSub"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STAFF: MY PAYMENTS ── -->
+    <div class="section" id="sec-mypayments">
+      <div class="sec-header">
+        <div><div class="sec-title">My Payments</div><div class="sec-sub">Payment records posted by admin for you</div></div>
+      </div>
+      <div id="myPayList"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- STAFF MODAL -->
+<div class="modal-backdrop" id="staffModal">
+  <div class="modal">
+    <h3 id="staffModalTitle">Add Staff</h3>
+    <div class="field"><label>Full Name</label><input class="fi" id="sfName" placeholder="e.g. Priya Sharma"></div>
+    <div class="field"><label>Username</label><input class="fi" id="sfUser" placeholder="e.g. priya123"></div>
+    <div class="field"><label>Password</label><input class="fi" type="password" id="sfPass" placeholder="Set password"></div>
+    <div class="field"><label>Role</label>
+      <select class="fi" id="sfRole">
+        <option value="staff">Staff</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('staffModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStaff()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT VIEW MODAL -->
+<div class="modal-backdrop" id="payViewModal">
+  <div class="modal">
+    <h3>Payment Details</h3>
+    <div id="payViewContent"></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('payViewModal')">Close</button></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="this.classList.remove('open')">
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  LOCAL STORAGE KEYS
+// ══════════════════════════════════════════
+const LS_KEYS = {
+  users:       'smevents_users',
+  attendance:  'smevents_attendance',
+  payments:    'smevents_payments',
+  permissions: 'smevents_permissions',
+  notifications:'smevents_notifications',
+};
+
+// ── Default seed data (used only on first run, never overwrites saved data) ──
+const DEFAULT_USERS = [
+  {id:1,username:'admin',  password:'admin123',name:'Admin User',role:'admin',  active:true},
+  {id:2,username:'SM26001',password:'SM00126', name:'SM26001',  role:'staff',   active:true},
+  {id:3,username:'SM26002',password:'SM00226', name:'SM26002',  role:'staff',   active:true},
+  {id:4,username:'SM26003',password:'SM00326', name:'SM26003',  role:'staff',   active:true},
+  {id:5,username:'SM26004',password:'SM00426', name:'SM26004',  role:'staff',   active:true},
+];
+const DEFAULT_ATTENDANCE = [
+  {userId:2,date:'2025-06-01',checkIn:'09:52',checkOut:'18:10',checkInLoc:'Anna Nagar, Chennai',checkOutLoc:'Anna Nagar, Chennai',status:'present'},
+  {userId:3,date:'2025-06-01',checkIn:'10:15',checkOut:'18:00',checkInLoc:'Coimbatore City',checkOutLoc:'RS Puram, CBE',status:'late'},
+  {userId:4,date:'2025-06-01',checkIn:'09:55',checkOut:'17:45',checkInLoc:'Gandhipuram, CBE',checkOutLoc:'Peelamedu, CBE',status:'late'},
+  {userId:2,date:'2025-06-02',checkIn:'09:58',checkOut:'18:05',checkInLoc:'Peelamedu, CBE',checkOutLoc:'Peelamedu, CBE',status:'present'},
+  {userId:3,date:'2025-06-02',checkIn:'09:50',checkOut:'18:00',checkInLoc:'RS Puram, CBE',checkOutLoc:'RS Puram, CBE',status:'present'},
+];
+const DEFAULT_PAYMENTS = [
+  {id:1,staffId:2,staffName:'SM26001',amount:'25000',date:'2025-05-31',note:'May Salary',proof:null,proofType:null,proofName:null},
+  {id:2,staffId:3,staffName:'SM26002',amount:'22000',date:'2025-05-31',note:'May Salary',proof:null,proofType:null,proofName:null},
+];
+
+// ── Load from localStorage (falls back to defaults if nothing saved yet) ──
+function _load(key, fallback){
+  try{ const raw=localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+  catch(e){ return fallback; }
+}
+
+// ── Mutable arrays – populated from storage ──
+// We use a proxy trick: re-assign into a let variable so save() always captures current state
+let USERS            = _load(LS_KEYS.users,        DEFAULT_USERS);
+let attendance       = _load(LS_KEYS.attendance,   DEFAULT_ATTENDANCE);
+let payments         = _load(LS_KEYS.payments,     DEFAULT_PAYMENTS);
+let permissionRequests = _load(LS_KEYS.permissions,  []);
+let notifications    = _load(LS_KEYS.notifications,  []);
+
+// ── saveData() – call this after any mutation ──
+function saveData(){
+  try{
+    localStorage.setItem(LS_KEYS.users,        JSON.stringify(USERS));
+    localStorage.setItem(LS_KEYS.attendance,   JSON.stringify(attendance));
+    localStorage.setItem(LS_KEYS.payments,     JSON.stringify(payments));
+    localStorage.setItem(LS_KEYS.permissions,  JSON.stringify(permissionRequests));
+    localStorage.setItem(LS_KEYS.notifications,JSON.stringify(notifications));
+  }catch(e){ console.warn('SMevents: localStorage save failed',e); }
+}
+
+// ── clearAllData() – admin utility to wipe storage & reload ──
+function clearAllData(){
+  if(!confirm('⚠️ This will permanently delete ALL stored data (attendance, payments, staff, etc.) and reset to defaults. Continue?')) return;
+  Object.values(LS_KEYS).forEach(k=>localStorage.removeItem(k));
+  toast('🗑️ All data cleared. Reloading…','red');
+  setTimeout(()=>location.reload(), 1500);
+}
+
+// ══════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════
+
+// Attendance timing rules:
+// CHECK-IN  present window : 09:50 – 10:00  (inclusive)
+// CHECK-OUT present window : 17:59 (17h 59m) and later  → means >= 18:00 exactly?
+// As requested: "after 5.59" = 17:59 or later → we treat >= 17:59 as on-time checkout
+// Status = present only if BOTH check-in AND check-out are in window; else late
+const CI_START = {h:9,  m:50};  // 09:50
+const CI_END   = {h:10, m:0};   // 10:00
+const CO_MIN   = {h:17, m:59};  // 17:59  (after 5:59 PM)
+
+let locations = {};   // {userId: {locName, time}} – not persisted (live session only)
+
+let currentUser       = null;
+let checkedIn         = false;
+let checkedOut        = false;
+let checkInTime       = null;
+let checkOutTime      = null;
+let checkInLoc        = '';
+let checkOutLoc       = '';
+let locWatcher        = null;
+let myCurrentLocName  = '';
+let selectedPayStaffId= null;
+let uploadedFile      = null;
+let editingStaffId    = null;
+let notifOpen         = false;
+
+// ══════════════════════════════════════════
+//  TAB DEFINITIONS PER ROLE
+// ══════════════════════════════════════════
+const ADMIN_TABS = [
+  {id:'dashboard',   label:'Dashboard'},
+  {id:'allloc',      label:'Live Location'},
+  {id:'staff',       label:'Staff'},
+  {id:'payments',    label:'Payments'},
+  {id:'permissions', label:'Requests', badge:'permTabBadge'},
+  {id:'reports',     label:'Reports'},
+];
+const STAFF_TABS = [
+  {id:'attendance',  label:'Attendance'},
+  {id:'location',    label:'My Location'},
+  {id:'mypayments',  label:'My Payments'},
+];
+
+function buildTabs(tabs){
+  const nav=document.getElementById('navTabs');
+  nav.innerHTML='';
+  tabs.forEach((t,i)=>{
+    const btn=document.createElement('button');
+    btn.className='tab-btn'+(i===0?' active':'');
+    btn.dataset.tab=t.id;
+    btn.onclick=()=>switchTab(t.id,btn);
+    btn.innerHTML=`<span class="tab-dot"></span>${t.label}`
+      +(t.badge?`<span class="tab-req-badge" id="${t.badge}">0</span>`:'');
+    nav.appendChild(btn);
+  });
+  // activate first
+  const first=nav.querySelector('.tab-btn');
+  if(first) document.getElementById('sec-'+first.dataset.tab).classList.add('active');
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('sec-'+name).classList.add('active');
+  if(name==='dashboard')   renderDashboard();
+  if(name==='allloc')      renderAllLocations();
+  if(name==='staff')       renderStaff();
+  if(name==='payments')    renderPaymentsAdmin();
+  if(name==='permissions') renderPermissions();
+  if(name==='reports')     renderReports();
+  if(name==='attendance')  renderMyAttendance();
+  if(name==='location')    startMyLocation();
+  if(name==='mypayments')  renderMyPayments();
+}
+function switchTabById(id){const el=document.querySelector(`[data-tab="${id}"]`);if(el)switchTab(id,el);}
+
+// ══════════════════════════════════════════
+//  LOGIN / LOGOUT
+// ══════════════════════════════════════════
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value.trim();
+  const found=USERS.find(x=>x.username===u&&x.password===p&&x.active);
+  if(!found){document.getElementById('loginErr').textContent='✕ Invalid username or password.';return;}
+  currentUser=found;
+  document.getElementById('loginPage').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('userAvatar').textContent=found.name[0].toUpperCase();
+  document.getElementById('userFullName').textContent=found.name;
+  document.getElementById('userRole').textContent=cap(found.role);
+  if(found.role==='admin'){
+    document.getElementById('notifWrap').style.display='flex';
+    buildTabs(ADMIN_TABS);
+    renderDashboard();
+  } else {
+    buildTabs(STAFF_TABS);
+    restoreTodayState();
+    renderMyAttendance();
+  }
+  startClock();
+  if(found.role==='admin') renderNotifBadge();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginPage').style.display!=='none')doLogin();});
+
+function doLogout(){
+  if(locWatcher)navigator.geolocation.clearWatch(locWatcher);locWatcher=null;
+  currentUser=null;checkedIn=false;checkedOut=false;checkInTime=null;checkOutTime=null;
+  checkInLoc='';checkOutLoc='';selectedPayStaffId=null;uploadedFile=null;notifOpen=false;myCurrentLocName='';
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').textContent='';
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+}
+
+function restoreTodayState(){
+  const rec=getTodayRecord(currentUser.id);
+  if(rec){
+    if(rec.checkIn){checkedIn=true;checkInTime=rec.checkIn;checkInLoc=rec.checkInLoc||'';}
+    if(rec.checkOut){checkedOut=true;checkOutTime=rec.checkOut;checkOutLoc=rec.checkOutLoc||'';}
+  }
+  updateCheckBtn();
+}
+
+// ══════════════════════════════════════════
+//  CLOCK
+// ══════════════════════════════════════════
+function startClock(){
+  function tick(){
+    const now=new Date();
+    const el1=document.getElementById('liveClock');
+    const el2=document.getElementById('liveDate');
+    const el3=document.getElementById('todayDate');
+    if(el1)el1.textContent=now.toLocaleTimeString('en-IN');
+    if(el2)el2.textContent=now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    if(el3)el3.textContent='Today · '+now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  }
+  tick();setInterval(tick,1000);
+}
+
+// ══════════════════════════════════════════
+//  ATTENDANCE STATUS LOGIC
+//  Present = check-in 09:50–10:00 AND check-out >= 17:59
+//  Late = anything else
+// ══════════════════════════════════════════
+function calcStatus(checkInStr, checkOutStr){
+  if(!checkInStr||!checkOutStr) return 'late';
+  const [ih,im]=checkInStr.split(':').map(Number);
+  const [oh,om]=checkOutStr.split(':').map(Number);
+  const ciMin=ih*60+im;
+  const coMin=oh*60+om;
+  const ciOk = ciMin >= CI_START.h*60+CI_START.m && ciMin <= CI_END.h*60+CI_END.m;
+  const coOk = coMin >= CO_MIN.h*60+CO_MIN.m;
+  return (ciOk && coOk) ? 'present' : 'late';
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD (admin)
+// ══════════════════════════════════════════
+function renderDashboard(){
+  const today=todayStr();
+  const todayAtt=attendance.filter(a=>a.date===today);
+  const staffOnly=USERS.filter(u=>u.role!=='admin');
+  const presentIds=todayAtt.map(a=>a.userId);
+  const present=todayAtt.filter(a=>a.status==='present').length;
+  const late=todayAtt.filter(a=>a.status==='late').length;
+  const absent=staffOnly.filter(u=>!presentIds.includes(u.id)).length;
+  document.getElementById('statPresent').textContent=present;
+  document.getElementById('statAbsent').textContent=absent;
+  document.getElementById('statLate').textContent=late;
+  document.getElementById('statTotal').textContent=staffOnly.length;
+  const tbody=document.getElementById('dashAttBody');tbody.innerHTML='';
+  staffOnly.forEach(u=>{
+    const rec=todayAtt.find(a=>a.userId===u.id);
+    const status=rec?rec.status:'absent';
+    tbody.innerHTML+=`<tr>
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:26px;height:26px;font-size:10px">${u.name[0]}</div>${u.name}</div></td>
+      <td>${rec?rec.checkIn:'—'}</td>
+      <td style="color:var(--muted);font-size:13px">📍 ${rec?rec.checkInLoc||'—':'—'}</td>
+      <td>${rec&&rec.checkOut?rec.checkOut:'—'}</td>
+      <td style="color:var(--muted);font-size:13px">📍 ${rec&&rec.checkOutLoc?rec.checkOutLoc:'—'}</td>
+      <td><span class="pill ${status==='present'?'pill-green':status==='late'?'pill-amber':'pill-red'}">${cap(status)}</span></td>
+    </tr>`;
+  });
+}
+
+// ══════════════════════════════════════════
+//  ALL STAFF LIVE LOCATIONS (admin tab)
+// ══════════════════════════════════════════
+function renderAllLocations(){
+  const tbody=document.getElementById('allLocBody');tbody.innerHTML='';
+  USERS.filter(u=>u.role!=='admin').forEach(u=>{
+    const loc=locations[u.id];
+    tbody.innerHTML+=`<tr>
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:26px;height:26px;font-size:10px">${u.name[0]}</div>${u.name}</div></td>
+      <td style="font-size:14px">📍 ${loc?loc.locName:'—'}</td>
+      <td><span class="pill ${loc?'pill-green':'pill-red'}">${loc?'● Live':'Offline'}</span></td>
+      <td style="color:var(--muted);font-size:13px">${loc?loc.time:'—'}</td>
+    </tr>`;
+  });
+}
+function refreshAllLoc(){renderAllLocations();toast('🔄 Refreshed','blue');}
+
+// ══════════════════════════════════════════
+//  CHECK-IN / CHECK-OUT (staff)
+// ══════════════════════════════════════════
+function updateCheckBtn(){
+  const btn=document.getElementById('bigCheckBtn');
+  const lbl=document.getElementById('bigBtnLabel');
+  const permArea=document.getElementById('permRequestArea');
+  const today=todayStr();
+  if(checkedOut){
+    // fully done – check if approved extra
+    const granted=permissionRequests.find(r=>r.userId===currentUser.id&&r.date===today&&r.status==='approved'&&!r.used);
+    if(granted){
+      granted.used=true;
+      checkedIn=false;checkedOut=false;checkInTime=null;checkOutTime=null;
+      btn.className='big-btn in';lbl.textContent='CHECK IN';
+      document.getElementById('checkStatus').innerHTML='Admin approved extra check-in. You may proceed.';
+      permArea.style.display='none';
+      document.getElementById('permReqStatus').textContent='';
+      return;
+    }
+    btn.className='big-btn done';lbl.textContent='DONE';
+    btn.querySelector('.bicon').textContent='🔒';
+    document.getElementById('checkStatus').innerHTML=`In: <strong>${checkInTime}</strong> · Out: <strong>${checkOutTime}</strong>`;
+    const pending=permissionRequests.find(r=>r.userId===currentUser.id&&r.date===today&&r.status==='pending');
+    permArea.style.display='block';
+    document.getElementById('permReqStatus').textContent=pending?'⏳ Request sent – waiting for admin.':'';
+  } else if(checkedIn){
+    btn.className='big-btn out';lbl.textContent='CHECK OUT';
+    btn.querySelector('.bicon').textContent='✕';
+    document.getElementById('checkStatus').innerHTML=`Checked in at <strong>${checkInTime}</strong><br>📍 ${checkInLoc}`;
+    permArea.style.display='none';
+  } else {
+    btn.className='big-btn in';lbl.textContent='CHECK IN';
+    btn.querySelector('.bicon').textContent='✓';
+    document.getElementById('checkStatus').textContent='Not checked in today.';
+    permArea.style.display='none';
+  }
+}
+
+function toggleCheckIn(){
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false});
+  const today=todayStr();
+  const locName=myCurrentLocName||'Location not captured';
+
+  if(!checkedIn){
+    checkedIn=true;checkInTime=timeStr;checkInLoc=locName;
+    attendance.push({userId:currentUser.id,date:today,checkIn:timeStr,checkOut:null,
+      checkInLoc:locName,checkOutLoc:null,status:'late'});
+    pushNotif({icon:'🟢',message:`${currentUser.name} checked in`,detail:`${timeStr} · 📍 ${locName}`});
+    toast('✅ Checked in · '+locName,'green');
+  } else if(checkedIn&&!checkedOut){
+    checkedOut=true;checkOutTime=timeStr;checkOutLoc=locName;
+    const rec=getTodayRecord(currentUser.id);
+    if(rec){rec.checkOut=timeStr;rec.checkOutLoc=locName;rec.status=calcStatus(checkInTime,timeStr);}
+    pushNotif({icon:'🔴',message:`${currentUser.name} checked out`,detail:`${timeStr} · 📍 ${locName}`});
+    toast('👋 Checked out · '+locName,'green');
+  }
+  saveData();
+  updateCheckBtn();
+  renderMyAttendance();
+}
+
+function requestPermission(){
+  const today=todayStr();
+  const existing=permissionRequests.find(r=>r.userId===currentUser.id&&r.date===today&&r.status==='pending');
+  if(existing){toast('Request already sent!','blue');return;}
+  permissionRequests.push({id:Date.now(),userId:currentUser.id,userName:currentUser.name,
+    date:today,requestedAt:new Date().toLocaleTimeString('en-IN'),status:'pending',used:false});
+  saveData();
+  pushNotif({icon:'🙋',message:`Permission request from ${currentUser.name}`,
+    detail:`Extra check-in · ${today}`});
+  document.getElementById('permReqStatus').textContent='⏳ Request sent – waiting for admin.';
+  toast('📨 Request sent to admin','blue');
+}
+
+// ══════════════════════════════════════════
+//  MY ATTENDANCE TABLE (staff)
+// ══════════════════════════════════════════
+function renderMyAttendance(){
+  const myRecs=attendance.filter(a=>a.userId===currentUser.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const tbody=document.getElementById('myAttBody');tbody.innerHTML='';
+  if(!myRecs.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--muted)">No records yet.</td></tr>';return;}
+  myRecs.forEach(r=>{
+    tbody.innerHTML+=`<tr>
+      <td>${r.date}</td>
+      <td>${r.checkIn}</td>
+      <td style="color:var(--muted);font-size:13px">📍 ${r.checkInLoc||'—'}</td>
+      <td>${r.checkOut||'—'}</td>
+      <td style="color:var(--muted);font-size:13px">📍 ${r.checkOutLoc||'—'}</td>
+      <td><span class="pill ${r.status==='present'?'pill-green':r.status==='late'?'pill-amber':'pill-red'}">${r.status}</span></td>
+    </tr>`;
+  });
+}
+
+// ══════════════════════════════════════════
+//  MY LOCATION (staff) – full tracker
+// ══════════════════════════════════════════
+let locAutoTimer   = null;
+let lastLat        = null;
+let lastLng        = null;
+let mapLoaded      = false;
+
+function startMyLocation(){
+  if(!navigator.geolocation){
+    setLocStatus(false,'Geolocation not supported by this browser.');
+    return;
+  }
+  setLocStatus(null,'Acquiring GPS signal…');
+  // immediate fetch
+  navigator.geolocation.getCurrentPosition(onMyLocation, onLocError, {enableHighAccuracy:true,timeout:10000});
+  // watch
+  if(locWatcher) navigator.geolocation.clearWatch(locWatcher);
+  locWatcher = navigator.geolocation.watchPosition(onMyLocation, onLocError, {enableHighAccuracy:true,maximumAge:5000});
+  // auto-refresh every 5 seconds
+  if(locAutoTimer) clearInterval(locAutoTimer);
+  locAutoTimer = setInterval(()=>{
+    navigator.geolocation.getCurrentPosition(onMyLocation, onLocError, {enableHighAccuracy:true,timeout:8000});
+  }, 5000);
+  document.getElementById('locAutoUpdate').textContent = 'Auto-update: Every 5 sec ✓';
+}
+
+function refreshMyLocation(){
+  if(!navigator.geolocation){ setLocStatus(false,'Geolocation not supported.'); return; }
+  setLocStatus(null,'Refreshing…');
+  navigator.geolocation.getCurrentPosition(onMyLocation, onLocError, {enableHighAccuracy:true,timeout:10000});
+  toast('📍 Refreshing location…','blue');
+}
+
+function setLocStatus(active, msg){
+  const dot  = document.getElementById('locDot');
+  const text = document.getElementById('locStatusText');
+  if(!dot||!text) return;
+  if(active === true){
+    dot.style.background  = 'var(--green)';
+    dot.style.boxShadow   = '0 0 0 4px rgba(34,197,94,.2)';
+    dot.style.animation   = 'pulse 1.6s infinite';
+  } else if(active === false){
+    dot.style.background  = 'var(--red)';
+    dot.style.boxShadow   = 'none';
+    dot.style.animation   = 'none';
+  } else {
+    dot.style.background  = 'var(--accent)';
+    dot.style.boxShadow   = '0 0 0 4px rgba(245,166,35,.2)';
+    dot.style.animation   = 'pulse 1.6s infinite';
+  }
+  text.textContent = msg;
+}
+
+async function onMyLocation(pos){
+  const {latitude:lat, longitude:lng, accuracy:acc} = pos.coords;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dateStr = now.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+
+  // Status
+  setLocStatus(true,'🟢 Location Active');
+
+  // Info fields
+  const setEl = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  setEl('dispLat',  lat.toFixed(6) + '°');
+  setEl('dispLng',  lng.toFixed(6) + '°');
+  setEl('dispAcc',  acc.toFixed(0) + ' meters');
+  setEl('dispTime', timeStr + ' · ' + dateStr);
+
+  // Update map only when coords change noticeably (>5m) to avoid iframe reload flicker
+  const moved = !lastLat || Math.abs(lat-lastLat)>0.00005 || Math.abs(lng-lastLng)>0.00005;
+  if(moved || !mapLoaded){
+    lastLat=lat; lastLng=lng; mapLoaded=true;
+    const mapDiv=document.getElementById('mapContainer');
+    if(mapDiv) mapDiv.innerHTML=`<iframe
+      src="https://maps.google.com/maps?q=${lat},${lng}&z=17&output=embed"
+      style="width:100%;height:100%;border:none;border-radius:14px;filter:invert(88%) hue-rotate(180deg)"
+      allowfullscreen loading="lazy"></iframe>`;
+  }
+
+  // Reverse geocode (only when position changes)
+  if(moved){
+    setEl('locNameVal','Fetching location name…');
+    setEl('locNameSub','');
+    const {name, city, state, country} = await reverseGeocode(lat, lng);
+    const displayName = name || city || 'Unknown Location';
+    setEl('locNameVal', displayName);
+    setEl('locNameSub', [city&&city!==name?city:'', state, country].filter(Boolean).join(', '));
+    myCurrentLocName = [displayName, city&&city!==displayName?city:'', state].filter(Boolean).join(', ');
+    // store for admin view
+    locations[currentUser.id]={locName: myCurrentLocName, time: timeStr};
+    pushNotif({icon:'📍', message:`${currentUser.name} location updated`, detail: myCurrentLocName});
+  }
+}
+
+function onLocError(err){
+  setLocStatus(false, '🔴 Location Unavailable – ' +
+    (err.code===1 ? 'Permission denied. Please allow location access.'
+    :err.code===2 ? 'Position unavailable. Check GPS/network.'
+    :'Location request timed out.'));
+  const mapDiv=document.getElementById('mapContainer');
+  if(mapDiv) mapDiv.innerHTML=`<div style="text-align:center;color:var(--muted);padding:40px">
+    <div style="font-size:40px;margin-bottom:12px">🔴</div>
+    <div style="font-size:14px;font-weight:600">Location Unavailable</div>
+    <div style="font-size:12px;margin-top:6px">${err.code===1?'Please allow location access in your browser settings.':'Check your GPS or network connection.'}</div>
+  </div>`;
+}
+
+// Reverse geocode: BigDataCloud primary, Nominatim fallback
+async function reverseGeocode(lat, lng){
+  // Primary: BigDataCloud (free, no key, CORS-safe)
+  try{
+    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+    if(r.ok){
+      const d = await r.json();
+      const locality   = d.locality || d.localityInfo?.administrative?.[4]?.name || '';
+      const city       = d.city || d.principalSubdivision?.split(' ')[0] || '';
+      const state      = d.principalSubdivision || '';
+      const country    = d.countryName || '';
+      const name       = locality || city;
+      if(name) return {name, city, state, country};
+    }
+  }catch(e){}
+
+  // Fallback: Nominatim
+  try{
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
+      {headers:{'User-Agent':'SMevents-Staff-App/1.0'}});
+    if(r.ok){
+      const d = await r.json();
+      if(d.address){
+        const a = d.address;
+        const name  = a.suburb||a.neighbourhood||a.village||a.road||a.county||'';
+        const city  = a.city||a.town||a.county||'';
+        const state = a.state||'';
+        const country = a.country||'';
+        return {name, city, state, country};
+      }
+    }
+  }catch(e){}
+
+  return {name:`${lat.toFixed(4)}°N ${lng.toFixed(4)}°E`, city:'', state:'', country:''};
+}
+
+// ══════════════════════════════════════════
+//  STAFF MANAGEMENT
+// ══════════════════════════════════════════
+function renderStaff(filter=''){
+  const tbody=document.getElementById('staffBody');tbody.innerHTML='';
+  USERS.filter(u=>u.name.toLowerCase().includes(filter)||u.username.toLowerCase().includes(filter)).forEach(u=>{
+    tbody.innerHTML+=`<tr>
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:26px;height:26px;font-size:10px">${u.name[0]}</div>${u.name}</div></td>
+      <td style="color:var(--muted)">${u.username}</td>
+      <td><span class="pill ${u.role==='admin'?'pill-amber':u.role==='supervisor'?'pill-blue':'pill-green'}">${u.role}</span></td>
+      <td><span class="pill ${u.active?'pill-green':'pill-red'}">${u.active?'Active':'Inactive'}</span></td>
+      <td>
+        <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="editStaff(${u.id})">Edit</button>
+        <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;margin-left:6px" onclick="toggleActive(${u.id})">${u.active?'Deactivate':'Activate'}</button>
+      </td>
+    </tr>`;
+  });
+}
+function filterStaff(v){renderStaff(v.toLowerCase());}
+function openAddStaff(){editingStaffId=null;document.getElementById('staffModalTitle').textContent='Add Staff';['sfName','sfUser','sfPass'].forEach(id=>document.getElementById(id).value='');document.getElementById('sfRole').value='staff';document.getElementById('staffModal').classList.add('open');}
+function editStaff(id){editingStaffId=id;const u=USERS.find(x=>x.id===id);document.getElementById('staffModalTitle').textContent='Edit Staff';document.getElementById('sfName').value=u.name;document.getElementById('sfUser').value=u.username;document.getElementById('sfPass').value=u.password;document.getElementById('sfRole').value=u.role;document.getElementById('staffModal').classList.add('open');}
+function saveStaff(){
+  const name=document.getElementById('sfName').value.trim();
+  const user=document.getElementById('sfUser').value.trim();
+  const pass=document.getElementById('sfPass').value.trim();
+  const role=document.getElementById('sfRole').value;
+  if(!name||!user||!pass){toast('Fill all fields!','red');return;}
+  if(editingStaffId){const u=USERS.find(x=>x.id===editingStaffId);u.name=name;u.username=user;u.password=pass;u.role=role;toast('✅ Updated','green');}
+  else{if(USERS.find(x=>x.username===user)){toast('Username taken!','red');return;}USERS.push({id:Date.now(),username:user,password:pass,name,role,active:true});toast('✅ Staff added','green');}
+  saveData();
+  closeModal('staffModal');renderStaff();
+}
+function toggleActive(id){const u=USERS.find(x=>x.id===id);u.active=!u.active;saveData();toast(u.active?'✅ Activated':'⛔ Deactivated',u.active?'green':'red');renderStaff();}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ══════════════════════════════════════════
+//  PAYMENTS – ADMIN POST
+// ══════════════════════════════════════════
+function renderPaymentsAdmin(){
+  const area=document.getElementById('payStaffSelect');area.innerHTML='';
+  USERS.filter(u=>u.role!=='admin').forEach(u=>{
+    area.innerHTML+=`<div class="staff-pay-card ${selectedPayStaffId===u.id?'selected':''}" onclick="selectPayStaff(${u.id})">
+      <div class="avatar" style="width:40px;height:40px;font-size:16px;margin:0 auto">${u.name[0]}</div>
+      <div class="sp-name">${u.name}</div>
+      <div class="sp-role">${u.role}</div>
+    </div>`;
+  });
+  document.getElementById('payFormArea').style.display=selectedPayStaffId?'block':'none';
+  renderPayTable();
+}
+function selectPayStaff(id){selectedPayStaffId=id;uploadedFile=null;document.getElementById('payGallery').innerHTML='';document.getElementById('payAmount').value='';document.getElementById('payNote').value='';document.getElementById('payDate').value=todayStr();renderPaymentsAdmin();}
+function handleFiles(files){
+  const f=files[0];if(!f)return;
+  if(f.size>10*1024*1024){toast('File too large!','red');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{uploadedFile={name:f.name,src:e.target.result,type:f.type};renderGallery();};
+  reader.readAsDataURL(f);
+}
+function handleDrop(e){e.preventDefault();document.getElementById('uploadZone').classList.remove('drag');handleFiles(e.dataTransfer.files);}
+function renderGallery(){
+  const g=document.getElementById('payGallery');
+  if(!uploadedFile){g.innerHTML='';return;}
+  const f=uploadedFile;
+  g.innerHTML=`<div class="gitem">
+    ${f.type.startsWith('image/')?`<img src="${f.src}" alt="${f.name}" onclick="openLightbox('${f.src}')">`:`<div style="height:108px;display:flex;align-items:center;justify-content:center;font-size:38px">📄</div>`}
+    <div class="glabel">${f.name}</div>
+    <button class="gdel" onclick="uploadedFile=null;renderGallery()">✕</button>
+  </div>`;
+}
+function submitPayment(){
+  if(!selectedPayStaffId){toast('Select a staff member first','red');return;}
+  const amt=document.getElementById('payAmount').value.trim();
+  const dt=document.getElementById('payDate').value;
+  const note=document.getElementById('payNote').value.trim();
+  if(!amt){toast('Enter amount','red');return;}
+  const staff=USERS.find(u=>u.id===selectedPayStaffId);
+  payments.push({id:Date.now(),staffId:selectedPayStaffId,staffName:staff.name,amount:amt,date:dt,note:note||'Payment',proof:uploadedFile?uploadedFile.src:null,proofType:uploadedFile?uploadedFile.type:null,proofName:uploadedFile?uploadedFile.name:null});
+  saveData();
+  uploadedFile=null;document.getElementById('payGallery').innerHTML='';document.getElementById('payAmount').value='';document.getElementById('payNote').value='';
+  toast(`✅ Payment posted for ${staff.name}`,'green');
+  renderPayTable();
+}
+function renderPayTable(){
+  const tbody=document.getElementById('payBody');tbody.innerHTML='';
+  [...payments].reverse().forEach(p=>{
+    tbody.innerHTML+=`<tr>
+      <td>${p.staffName}</td>
+      <td style="color:var(--green);font-weight:600">₹${Number(p.amount).toLocaleString('en-IN')}</td>
+      <td>${p.date}</td>
+      <td style="color:var(--muted)">${p.note}</td>
+      <td><span class="pill ${p.proof?'pill-green':'pill-amber'}">${p.proof?'Uploaded':'No Proof'}</span></td>
+      <td><button class="btn btn-ghost" style="padding:5px 11px;font-size:12px" onclick="viewPayment(${p.id})">View</button></td>
+    </tr>`;
+  });
+}
+function viewPayment(id){
+  const p=payments.find(x=>x.id===id);if(!p)return;
+  const staff=USERS.find(u=>u.id===p.staffId);
+  document.getElementById('payViewContent').innerHTML=`
+    <div class="pay-detail-header">
+      <div class="pay-detail-avatar">${staff?staff.name[0]:'?'}</div>
+      <div><div style="font-weight:700;font-size:16px">${p.staffName}</div><div style="color:var(--muted);font-size:13px">${staff?staff.role:'—'}</div></div>
+    </div>
+    <div class="inf-grid">
+      <div class="inf-box"><div class="inf-label">Amount</div><div class="inf-val" style="color:var(--green)">₹${Number(p.amount).toLocaleString('en-IN')}</div></div>
+      <div class="inf-box"><div class="inf-label">Date</div><div class="inf-val">${p.date}</div></div>
+      <div class="inf-box" style="grid-column:1/-1"><div class="inf-label">Note</div><div class="inf-val">${p.note}</div></div>
+    </div>
+    ${p.proof
+      ?(p.proofType&&p.proofType.startsWith('image/')
+        ?`<img src="${p.proof}" style="width:100%;max-height:280px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:zoom-in;margin-top:4px" onclick="openLightbox('${p.proof}')">`
+        :`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;font-size:14px;color:var(--muted)">📄 ${p.proofName}</div>`)
+      :`<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">No proof uploaded</div>`
+    }`;
+  document.getElementById('payViewModal').classList.add('open');
+}
+function openLightbox(src){document.getElementById('lightboxImg').src=src;document.getElementById('lightbox').classList.add('open');}
+
+// ══════════════════════════════════════════
+//  MY PAYMENTS (staff – own only)
+// ══════════════════════════════════════════
+function renderMyPayments(){
+  const myPays=payments.filter(p=>p.staffId===currentUser.id).sort((a,b)=>b.id-a.id);
+  const wrap=document.getElementById('myPayList');
+  if(!myPays.length){wrap.innerHTML=`<div style="text-align:center;color:var(--muted);padding:60px;font-size:15px">No payment records posted for you yet.</div>`;return;}
+  wrap.innerHTML='';
+  myPays.forEach(p=>{
+    const d=document.createElement('div');d.className='card';
+    d.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--green)">₹${Number(p.amount).toLocaleString('en-IN')}</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:2px">${p.note}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:500">${p.date}</div>
+          <span class="pill ${p.proof?'pill-green':'pill-amber'}" style="margin-top:5px;display:inline-flex">${p.proof?'Proof Attached':'No Proof'}</span>
+        </div>
+      </div>
+      ${p.proof
+        ?(p.proofType&&p.proofType.startsWith('image/')
+          ?`<img src="${p.proof}" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:zoom-in" onclick="openLightbox('${p.proof}')">`
+          :`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;font-size:14px;color:var(--muted)">📄 ${p.proofName}</div>`)
+        :''}`;
+    wrap.appendChild(d);
+  });
+}
+
+// ══════════════════════════════════════════
+//  PERMISSION REQUESTS (admin)
+// ══════════════════════════════════════════
+function renderPermissions(){
+  const all=[...permissionRequests].sort((a,b)=>b.id-a.id);
+  const pending=all.filter(r=>r.status==='pending');
+  const wrap=document.getElementById('permList');
+  if(!all.length){wrap.innerHTML='<div style="text-align:center;color:var(--muted);padding:50px">No requests yet.</div>';return;}
+  wrap.innerHTML='';
+  all.forEach(r=>{
+    const d=document.createElement('div');d.className='perm-card';
+    d.innerHTML=`
+      <div class="perm-info">
+        <div style="font-size:26px">🙋</div>
+        <div><div class="perm-name">${r.userName}</div><div class="perm-detail">Requested at ${r.requestedAt} · ${r.date}</div></div>
+      </div>
+      <div class="perm-actions">
+        ${r.status==='pending'
+          ?`<button class="btn btn-green" style="padding:7px 14px;font-size:12px" onclick="handlePerm(${r.id},'approved')">✓ Approve</button>
+             <button class="btn btn-danger" style="padding:7px 14px;font-size:12px" onclick="handlePerm(${r.id},'denied')">✕ Deny</button>`
+          :`<span class="pill ${r.status==='approved'?'pill-green':'pill-red'}">${cap(r.status)}</span>`}
+      </div>`;
+    wrap.appendChild(d);
+  });
+  const badge=document.getElementById('permTabBadge');
+  if(badge){badge.style.display=pending.length?'inline-flex':'none';badge.textContent=pending.length;}
+}
+function handlePerm(id,action){
+  const req=permissionRequests.find(r=>r.id===id);if(!req)return;
+  req.status=action;
+  saveData();
+  const staff=USERS.find(u=>u.id===req.userId);
+  pushNotif({icon:action==='approved'?'✅':'❌',message:`Permission ${action} for ${req.userName}`,detail:`Extra check-in · ${req.date}`});
+  toast(`${action==='approved'?'✅ Approved':'❌ Denied'} – ${staff?staff.name:'Staff'}`,'green');
+  renderPermissions();
+}
+
+// ══════════════════════════════════════════
+//  NOTIFICATIONS (admin)
+// ══════════════════════════════════════════
+function pushNotif(obj){
+  if(currentUser&&currentUser.role==='admin'&&obj.forSelf!==false){
+    notifications.unshift({id:Date.now(),icon:obj.icon,message:obj.message,detail:obj.detail,time:new Date().toLocaleTimeString('en-IN'),read:false});
+    saveData();
+    renderNotifBadge();if(notifOpen)renderNotifList();
+  }
+  // if staff action, always add to notifications for admin when admin is logged in
+  if(currentUser&&currentUser.role!=='admin'){
+    notifications.unshift({id:Date.now(),icon:obj.icon,message:obj.message,detail:obj.detail,time:new Date().toLocaleTimeString('en-IN'),read:false});
+    saveData();
+  }
+}
+function renderNotifBadge(){
+  const cnt=notifications.filter(n=>!n.read).length;
+  const b=document.getElementById('notifBadge');
+  b.style.display=cnt?'flex':'none';b.textContent=cnt>9?'9+':cnt;
+}
+function renderNotifList(){
+  const list=document.getElementById('notifList');
+  if(!notifications.length){list.innerHTML='<div class="notif-empty">🎉 All caught up!</div>';return;}
+  list.innerHTML='';
+  notifications.slice(0,25).forEach(n=>{
+    list.innerHTML+=`<div class="notif-item ${n.read?'':'unread'}">
+      <div class="notif-icon">${n.icon}</div>
+      <div class="notif-text"><strong>${n.message}</strong><span>${n.detail} · ${n.time}</span></div>
+    </div>`;
+  });
+}
+function toggleNotifPanel(){
+  notifOpen=!notifOpen;
+  const panel=document.getElementById('notifPanel');
+  panel.classList.toggle('hidden',!notifOpen);
+  if(notifOpen){notifications.forEach(n=>n.read=true);saveData();renderNotifBadge();renderNotifList();}
+}
+function clearNotifs(){notifications=[];saveData();renderNotifBadge();renderNotifList();}
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('notifWrap');
+  if(notifOpen&&wrap&&!wrap.contains(e.target)){notifOpen=false;const p=document.getElementById('notifPanel');if(p)p.classList.add('hidden');}
+});
+
+// ══════════════════════════════════════════
+//  REPORTS (admin)
+// ══════════════════════════════════════════
+function renderReports(){
+  const staffOnly=USERS.filter(u=>u.role!=='admin');
+  const days=[...new Set(attendance.map(a=>a.date))];
+  let totalLate=0;
+  const tbody=document.getElementById('rptBody');tbody.innerHTML='';
+  staffOnly.forEach(u=>{
+    const recs=attendance.filter(a=>a.userId===u.id);
+    const present=recs.filter(a=>a.status==='present').length;
+    const late=recs.filter(a=>a.status==='late').length;
+    const absent=days.length-recs.length;
+    const rate=days.length?Math.round((recs.length/days.length)*100):0;
+    totalLate+=late;
+    tbody.innerHTML+=`<tr>
+      <td>${u.name}</td><td>${present}</td><td>${absent}</td><td>${late}</td>
+      <td><span class="pill ${rate>=90?'pill-green':rate>=70?'pill-amber':'pill-red'}">${rate}%</span></td>
+    </tr>`;
+  });
+  const allRecs=attendance.length,maxRecs=staffOnly.length*days.length;
+  document.getElementById('rptAvg').textContent=maxRecs?Math.round((allRecs/maxRecs)*100)+'%':'—';
+  document.getElementById('rptDays').textContent=days.length;
+  document.getElementById('rptLate').textContent=totalLate;
+  // Show storage usage
+  try{
+    let totalBytes=0;
+    Object.values(LS_KEYS).forEach(k=>{const v=localStorage.getItem(k);if(v)totalBytes+=v.length;});
+    const kb=(totalBytes/1024).toFixed(1);
+    const el=document.getElementById('storageSize');
+    if(el)el.textContent=`Storage used: ~${kb} KB`;
+  }catch(e){}
+}
+function exportCSV(){
+  const rows=[['Name','Date','Check In','In Location','Check Out','Out Location','Status']];
+  attendance.forEach(a=>{const u=USERS.find(x=>x.id===a.userId);rows.push([u?.name||'?',a.date,a.checkIn,a.checkInLoc||'',a.checkOut||'',a.checkOutLoc||'',a.status]);});
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='smevents_attendance.csv';a.click();
+  toast('📥 CSV exported','green');
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function getTodayRecord(uid){return attendance.find(a=>a.userId===uid&&a.date===todayStr());}
+function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):'';}
+
+let toastTimer;
+function toast(msg,type='green'){
+  const el=document.getElementById('toast');el.textContent=msg;el.className='show t-'+type;
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.className='';},3200);
+}
+</script>
+</body>
+</html>
