@@ -31,6 +31,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .login-err{color:var(--red);font-size:13px;margin-top:10px;text-align:center;min-height:18px}
 .login-footer{text-align:center;color:var(--muted);font-size:12px;margin-top:28px}
 
+/* OTP BOXES */
+.otp-box{width:46px;height:54px;background:var(--surface2);border:2px solid var(--border);border-radius:12px;text-align:center;font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s,transform .15s;caret-color:var(--accent)}
+.otp-box:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.15);transform:scale(1.07)}
+.otp-box.filled{border-color:var(--accent);background:rgba(245,166,35,.06)}
+.otp-box.error{border-color:var(--red);animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
 /* APP SHELL */
 #app{display:none;flex-direction:column;min-height:100vh}
 #app.visible{display:flex}
@@ -202,12 +209,38 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="brand-icon">SM</div>
       <div class="brand-name"><span>SM</span>events</div>
     </div>
-    <div class="login-title">Welcome back 👋</div>
-    <div class="login-sub">Sign in to your staff portal</div>
-    <div class="field"><label>Username</label><input class="fi" id="loginUser" placeholder="Enter username" autocomplete="off"></div>
-    <div class="field"><label>Password</label><input class="fi" type="password" id="loginPass" placeholder="Enter password"></div>
-    <button class="login-btn" onclick="doLogin()">Sign In →</button>
-    <div class="login-err" id="loginErr"></div>
+
+    <!-- STEP 1: Username + Password -->
+    <div id="loginStep1">
+      <div class="login-title">Welcome back 👋</div>
+      <div class="login-sub">Sign in to your staff portal</div>
+      <div class="field"><label>Username</label><input class="fi" id="loginUser" placeholder="Enter your username" autocomplete="off"></div>
+      <div class="field">
+        <label>Password</label>
+        <div style="position:relative">
+          <input class="fi" type="password" id="loginPass" placeholder="Enter password" style="padding-right:44px">
+          <span onclick="togglePassVis()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;color:var(--muted)" id="passEye">👁</span>
+        </div>
+      </div>
+      <button class="login-btn" onclick="doLogin()">Continue →</button>
+      <div class="login-err" id="loginErr"></div>
+    </div>
+
+    <!-- STEP 2: Mobile Verification -->
+    <div id="loginStep2" style="display:none">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:44px;margin-bottom:10px">📱</div>
+        <div class="login-title" style="font-size:22px">Verify Mobile</div>
+        <div class="login-sub">Enter your registered mobile number to confirm</div>
+      </div>
+      <div class="field"><label>Mobile Number</label><input class="fi" id="verifyMobile" placeholder="Enter 10-digit mobile number" maxlength="10" inputmode="numeric"></div>
+      <button class="login-btn" onclick="verifyMobile()">Verify & Sign In →</button>
+      <div class="login-err" id="mobileErr"></div>
+      <div style="text-align:center;margin-top:14px">
+        <span onclick="backToStep1()" style="font-size:13px;color:var(--muted);cursor:pointer">← Back</span>
+      </div>
+    </div>
+
     <div class="login-footer">SMevents Staff Portal · Secure Access</div>
   </div>
 </div>
@@ -254,7 +287,42 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
       <div class="card">
         <div class="card-title">📋 Today's Attendance</div>
-        <div class="table-wrap"><table><thead><tr><th>Staff</th><th>Check-In</th><th>Check-In Location</th><th>Check-Out</th><th>Check-Out Location</th><th>Status</th></tr></thead><tbody id="dashAttBody"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Staff</th><th>Mobile</th><th>Check-In</th><th>Check-In Location</th><th>Check-Out</th><th>Check-Out Location</th><th>Status</th><th>Details</th></tr></thead><tbody id="dashAttBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ── ADMIN: DAILY ACTIVITY ── -->
+    <div class="section" id="sec-dailyactivity">
+      <div class="sec-header">
+        <div><div class="sec-title">Daily Activity</div><div class="sec-sub">Each person's attendance with login mobile number</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <input class="search-input" type="date" id="daDateFilter" style="max-width:170px" oninput="renderDailyActivity()">
+          <input class="search-input" type="text" placeholder="🔍  Search by name…" id="daNameFilter" style="max-width:200px" oninput="renderDailyActivity()">
+          <button class="btn btn-ghost" onclick="document.getElementById('daDateFilter').value='';document.getElementById('daNameFilter').value='';renderDailyActivity()">Clear</button>
+        </div>
+      </div>
+      <!-- Summary pills -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px" id="daSummary"></div>
+      <div class="card">
+        <div class="card-title">📅 All Staff Daily Activity</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Staff Name</th>
+                <th>Login Mobile</th>
+                <th>Check-In</th>
+                <th>Check-In Location</th>
+                <th>Check-Out</th>
+                <th>Check-Out Location</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="daBody"></tbody>
+          </table>
+        </div>
+        <div id="daEmpty" style="display:none;text-align:center;padding:40px;color:var(--muted);font-size:14px">No records found for the selected filter.</div>
       </div>
     </div>
 
@@ -277,7 +345,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <button class="btn btn-primary" onclick="openAddStaff()">+ Add Staff</button>
       </div>
       <div class="search-row"><input class="search-input" type="text" placeholder="🔍  Search staff…" oninput="filterStaff(this.value)"></div>
-      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody id="staffBody"></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Mobile</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead><tbody id="staffBody"></tbody></table></div>
     </div>
 
     <!-- ── ADMIN: PAYMENTS ── -->
@@ -455,12 +523,36 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div><!-- /content -->
 </div><!-- /app -->
 
+<!-- STAFF DETAIL MODAL -->
+<div class="modal-backdrop" id="staffDetailModal">
+  <div class="modal" style="max-width:700px;width:95vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h3 id="detailStaffName" style="margin-bottom:4px">Staff Name</h3>
+        <div id="detailStaffMeta" style="font-size:13px;color:var(--muted)"></div>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('staffDetailModal')">✕ Close</button>
+    </div>
+    <!-- Summary pills -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px" id="detailSummary"></div>
+    <!-- Attendance history table -->
+    <div class="card-title" style="margin-bottom:10px">📅 Full Attendance History</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Login Mobile</th><th>Check-In</th><th>Check-In Location</th><th>Check-Out</th><th>Check-Out Location</th><th>Status</th></tr></thead>
+        <tbody id="detailAttBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- STAFF MODAL -->
 <div class="modal-backdrop" id="staffModal">
   <div class="modal">
     <h3 id="staffModalTitle">Add Staff</h3>
     <div class="field"><label>Full Name</label><input class="fi" id="sfName" placeholder="e.g. Priya Sharma"></div>
-    <div class="field"><label>Username</label><input class="fi" id="sfUser" placeholder="e.g. priya123"></div>
+    <div class="field"><label>Username</label><input class="fi" id="sfUser" placeholder="e.g. SM26007"></div>
+    <div class="field"><label>Mobile Number</label><input class="fi" id="sfMobile" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric"></div>
     <div class="field"><label>Password</label><input class="fi" type="password" id="sfPass" placeholder="Set password"></div>
     <div class="field"><label>Role</label>
       <select class="fi" id="sfRole">
@@ -507,19 +599,111 @@ const LS_KEYS = {
 
 // ── Default seed data (used only on first run, never overwrites saved data) ──
 const DEFAULT_USERS = [
-  {id:1,username:'admin',  password:'admin123',name:'Admin User',role:'admin',  active:true},
-  {id:2,username:'SM26001',password:'SM00126', name:'SM26001',  role:'staff',   active:true},
-  {id:3,username:'SM26002',password:'SM00226', name:'SM26002',  role:'staff',   active:true},
-  {id:4,username:'SM26003',password:'SM00326', name:'SM26003',  role:'staff',   active:true},
-  {id:5,username:'SM26004',password:'SM00426', name:'SM26004',  role:'staff',   active:true},
+  {id:1,username:'admin',  password:'admin123',name:'Admin User',role:'admin',mobile:'7397601630',active:true},
+  {id:2,username:'SM26001',password:'SM00126', name:'SM26001',  role:'staff', mobile:'8148792973',active:true},
+  {id:3,username:'SM26002',password:'SM00226', name:'SM26002',  role:'staff', mobile:'8148792973',active:true},
+  {id:4,username:'SM26003',password:'SM00326', name:'SM26003',  role:'staff', mobile:'8148792973',active:true},
+  {id:5,username:'SM26004',password:'SM00426', name:'SM26004',  role:'staff', mobile:'8148792973',active:true},
+  {id:6,username:'SM26005',password:'SM00526', name:'SM26005',  role:'staff', mobile:'8148792973',active:true},
+  {id:7,username:'SM26006',password:'SM00626', name:'SM26006',  role:'staff', mobile:'8148792973',active:true},
 ];
-const DEFAULT_ATTENDANCE = [
-  {userId:2,date:'2025-06-01',checkIn:'09:52',checkOut:'18:10',checkInLoc:'Anna Nagar, Chennai',checkOutLoc:'Anna Nagar, Chennai',status:'present'},
-  {userId:3,date:'2025-06-01',checkIn:'10:15',checkOut:'18:00',checkInLoc:'Coimbatore City',checkOutLoc:'RS Puram, CBE',status:'late'},
-  {userId:4,date:'2025-06-01',checkIn:'09:55',checkOut:'17:45',checkInLoc:'Gandhipuram, CBE',checkOutLoc:'Peelamedu, CBE',status:'late'},
-  {userId:2,date:'2025-06-02',checkIn:'09:58',checkOut:'18:05',checkInLoc:'Peelamedu, CBE',checkOutLoc:'Peelamedu, CBE',status:'present'},
-  {userId:3,date:'2025-06-02',checkIn:'09:50',checkOut:'18:00',checkInLoc:'RS Puram, CBE',checkOutLoc:'RS Puram, CBE',status:'present'},
-];
+// ── Generate 35-day seed attendance for all 6 staff ──
+(function(){
+  // Staff user IDs 2-7, each with their mobile
+  const STAFF_SEED = [
+    {id:2, mobile:'7397601630', locs:['Anna Nagar, Chennai','T. Nagar, Chennai','Adyar, Chennai']},
+    {id:3, mobile:'8148792973', locs:['RS Puram, CBE','Peelamedu, CBE','Coimbatore City']},
+    {id:4, mobile:'8148792973', locs:['Gandhipuram, CBE','Saibaba Colony, CBE','Peelamedu, CBE']},
+    {id:5, mobile:'8148792973', locs:['Velachery, Chennai','Tambaram, Chennai','Guindy, Chennai']},
+    {id:6, mobile:'8148792973', locs:['Madurai City','Anna Nagar, Madurai','Goripalayam, Madurai']},
+    {id:7, mobile:'8148792973', locs:['Salem City','Fairlands, Salem','Suramangalam, Salem']},
+  ];
+
+  // Start date: 35 days ago from a fixed reference (2025-05-01 to 2025-06-04)
+  const END   = new Date('2025-06-04');
+  const START = new Date(END);
+  START.setDate(START.getDate() - 34); // 35 days inclusive
+
+  // Weighted random helpers
+  function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function fmtDate(d){ return d.toISOString().split('T')[0]; }
+
+  // Consistent seed so data doesn't change on every page load
+  // Use a simple deterministic pseudo-random based on userId + date
+  function seededRand(seed){
+    let x = Math.sin(seed+1)*10000;
+    return x - Math.floor(x);
+  }
+
+  const rows = [];
+  let d = new Date(START);
+  while(d <= END){
+    const dow = d.getDay(); // 0=Sun, 6=Sat
+    const dateStr = fmtDate(d);
+    STAFF_SEED.forEach(s=>{
+      const seed = s.id * 10000 + d.getDate() * 100 + d.getMonth();
+      const r1 = seededRand(seed);
+      const r2 = seededRand(seed+1);
+      const r3 = seededRand(seed+2);
+      const r4 = seededRand(seed+3);
+      const r5 = seededRand(seed+4);
+
+      // Sundays: 80% absent
+      if(dow===0 && r1 < 0.80){ return; }
+      // Saturdays: 50% absent
+      if(dow===6 && r1 < 0.50){ return; }
+      // Weekdays: 10% absent
+      if(dow!==0 && dow!==6 && r1 < 0.10){ return; }
+
+      // Check-in time: 70% present window (09:50–10:00), 30% late (10:01–10:30)
+      let ciH=9, ciM;
+      if(r2 < 0.70){
+        ciM = 50 + Math.floor(r3*10); // 09:50–09:59
+        if(ciM>59){ciH=10;ciM=0;}
+      } else {
+        ciH=10; ciM = 1 + Math.floor(r3*29); // 10:01–10:29
+      }
+
+      // Check-out time: 70% on-time (18:00–19:00), 30% early (17:00–17:58)
+      let coH, coM;
+      if(r4 < 0.70){
+        coH = 18 + Math.floor(r5*1); // 18:xx
+        coM = Math.floor(r5*60);
+      } else {
+        coH = 17; coM = Math.floor(r5*58); // 17:00–17:57
+      }
+
+      const checkIn  = pad(ciH)+':'+pad(ciM);
+      const checkOut = pad(coH)+':'+pad(coM);
+
+      // Status logic matching the app's calcStatus
+      const ciMin = ciH*60+ciM;
+      const coMin = coH*60+coM;
+      const ciOk  = ciMin >= 9*60+50 && ciMin <= 10*60+0;
+      const coOk  = coMin >= 17*60+59;
+      const status = (ciOk && coOk) ? 'present' : 'late';
+
+      const loc     = s.locs[Math.floor(r1*s.locs.length)];
+      const locOut  = s.locs[Math.floor(r2*s.locs.length)];
+
+      rows.push({
+        userId:s.id,
+        date:dateStr,
+        checkIn,
+        checkOut,
+        checkInLoc:loc,
+        checkOutLoc:locOut,
+        status,
+        loginMobile:s.mobile
+      });
+    });
+    d.setDate(d.getDate()+1);
+  }
+  window._SEED_ATTENDANCE = rows;
+})();
+
+const DEFAULT_ATTENDANCE = window._SEED_ATTENDANCE || [];
 const DEFAULT_PAYMENTS = [
   {id:1,staffId:2,staffName:'SM26001',amount:'25000',date:'2025-05-31',note:'May Salary',proof:null,proofType:null,proofName:null},
   {id:2,staffId:3,staffName:'SM26002',amount:'22000',date:'2025-05-31',note:'May Salary',proof:null,proofType:null,proofName:null},
@@ -532,12 +716,28 @@ function _load(key, fallback){
 }
 
 // ── Mutable arrays – populated from storage ──
-// We use a proxy trick: re-assign into a let variable so save() always captures current state
 let USERS            = _load(LS_KEYS.users,        DEFAULT_USERS);
 let attendance       = _load(LS_KEYS.attendance,   DEFAULT_ATTENDANCE);
 let payments         = _load(LS_KEYS.payments,     DEFAULT_PAYMENTS);
 let permissionRequests = _load(LS_KEYS.permissions,  []);
 let notifications    = _load(LS_KEYS.notifications,  []);
+
+// ── Migration: ensure any new default users are added and mobile numbers stay in sync ──
+let _migrated = false;
+DEFAULT_USERS.forEach(du => {
+  const existing = USERS.find(u => u.id === du.id);
+  if(!existing){ USERS.push(du); _migrated = true; }
+  else if(existing.mobile !== du.mobile){ existing.mobile = du.mobile; _migrated = true; }
+});
+if(_migrated){ try{ localStorage.setItem(LS_KEYS.users, JSON.stringify(USERS)); }catch(e){} }
+
+// ── Merge seed attendance into existing data (adds missing date+userId records only) ──
+let _attMigrated = false;
+DEFAULT_ATTENDANCE.forEach(seedRec => {
+  const exists = attendance.find(a => a.userId===seedRec.userId && a.date===seedRec.date);
+  if(!exists){ attendance.push(seedRec); _attMigrated = true; }
+});
+if(_attMigrated){ try{ localStorage.setItem(LS_KEYS.attendance, JSON.stringify(attendance)); }catch(e){} }
 
 // ── saveData() – call this after any mutation ──
 function saveData(){
@@ -591,12 +791,13 @@ let notifOpen         = false;
 //  TAB DEFINITIONS PER ROLE
 // ══════════════════════════════════════════
 const ADMIN_TABS = [
-  {id:'dashboard',   label:'Dashboard'},
-  {id:'allloc',      label:'Live Location'},
-  {id:'staff',       label:'Staff'},
-  {id:'payments',    label:'Payments'},
-  {id:'permissions', label:'Requests', badge:'permTabBadge'},
-  {id:'reports',     label:'Reports'},
+  {id:'dashboard',      label:'Dashboard'},
+  {id:'allloc',         label:'Live Location'},
+  {id:'dailyactivity',  label:'Daily Activity'},
+  {id:'staff',          label:'Staff'},
+  {id:'payments',       label:'Payments'},
+  {id:'permissions',    label:'Requests', badge:'permTabBadge'},
+  {id:'reports',        label:'Reports'},
 ];
 const STAFF_TABS = [
   {id:'attendance',  label:'Attendance'},
@@ -626,9 +827,10 @@ function switchTab(name,el){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('sec-'+name).classList.add('active');
-  if(name==='dashboard')   renderDashboard();
-  if(name==='allloc')      renderAllLocations();
-  if(name==='staff')       renderStaff();
+  if(name==='dashboard')      renderDashboard();
+  if(name==='allloc')         renderAllLocations();
+  if(name==='dailyactivity')  renderDailyActivity();
+  if(name==='staff')          renderStaff();
   if(name==='payments')    renderPaymentsAdmin();
   if(name==='permissions') renderPermissions();
   if(name==='reports')     renderReports();
@@ -641,11 +843,47 @@ function switchTabById(id){const el=document.querySelector(`[data-tab="${id}"]`)
 // ══════════════════════════════════════════
 //  LOGIN / LOGOUT
 // ══════════════════════════════════════════
+let _pendingUser = null;
+
+function togglePassVis(){
+  const inp=document.getElementById('loginPass');
+  const eye=document.getElementById('passEye');
+  inp.type=inp.type==='password'?'text':'password';
+  eye.textContent=inp.type==='password'?'👁':'🙈';
+}
+
+// STEP 1 — check username + password
 function doLogin(){
   const u=document.getElementById('loginUser').value.trim();
   const p=document.getElementById('loginPass').value.trim();
+  const err=document.getElementById('loginErr');
+  if(!u||!p){err.textContent='✕ Please enter username and password.';return;}
   const found=USERS.find(x=>x.username===u&&x.password===p&&x.active);
-  if(!found){document.getElementById('loginErr').textContent='✕ Invalid username or password.';return;}
+  if(!found){err.textContent='✕ Invalid username or password.';return;}
+  err.textContent='';
+  _pendingUser=found;
+  document.getElementById('loginStep1').style.display='none';
+  document.getElementById('loginStep2').style.display='block';
+  document.getElementById('verifyMobile').value='';
+  document.getElementById('mobileErr').textContent='';
+  document.getElementById('verifyMobile').focus();
+}
+
+// STEP 2 — verify mobile number
+function verifyMobile(){
+  const entered=document.getElementById('verifyMobile').value.trim();
+  const err=document.getElementById('mobileErr');
+  if(!entered){err.textContent='✕ Please enter your mobile number.';return;}
+  if(!/^\d{10}$/.test(entered)){err.textContent='✕ Enter a valid 10-digit mobile number.';return;}
+  if(entered!==_pendingUser.mobile){
+    err.textContent='✕ Mobile number does not match. Access denied.';
+    document.getElementById('verifyMobile').style.borderColor='var(--red)';
+    setTimeout(()=>document.getElementById('verifyMobile').style.borderColor='',1500);
+    return;
+  }
+  // All good — complete login
+  err.textContent='';
+  const found=_pendingUser; _pendingUser=null;
   currentUser=found;
   document.getElementById('loginPage').style.display='none';
   document.getElementById('app').classList.add('visible');
@@ -654,17 +892,27 @@ function doLogin(){
   document.getElementById('userRole').textContent=cap(found.role);
   if(found.role==='admin'){
     document.getElementById('notifWrap').style.display='flex';
-    buildTabs(ADMIN_TABS);
-    renderDashboard();
+    buildTabs(ADMIN_TABS);renderDashboard();
   } else {
-    buildTabs(STAFF_TABS);
-    restoreTodayState();
-    renderMyAttendance();
+    buildTabs(STAFF_TABS);restoreTodayState();renderMyAttendance();
   }
   startClock();
   if(found.role==='admin') renderNotifBadge();
 }
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginPage').style.display!=='none')doLogin();});
+
+function backToStep1(){
+  _pendingUser=null;
+  document.getElementById('loginStep2').style.display='none';
+  document.getElementById('loginStep1').style.display='block';
+  document.getElementById('loginErr').textContent='';
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('loginPage').style.display!=='none'){
+    if(document.getElementById('loginStep1').style.display!=='none') doLogin();
+    else verifyMobile();
+  }
+});
 
 function doLogout(){
   if(locWatcher)navigator.geolocation.clearWatch(locWatcher);locWatcher=null;
@@ -737,13 +985,121 @@ function renderDashboard(){
   staffOnly.forEach(u=>{
     const rec=todayAtt.find(a=>a.userId===u.id);
     const status=rec?rec.status:'absent';
+    const mobile=rec&&rec.loginMobile?rec.loginMobile:(u.mobile||'—');
     tbody.innerHTML+=`<tr>
       <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:26px;height:26px;font-size:10px">${u.name[0]}</div>${u.name}</div></td>
+      <td style="font-family:monospace;font-size:13px;color:var(--accent)">📱 ${mobile}</td>
       <td>${rec?rec.checkIn:'—'}</td>
       <td style="color:var(--muted);font-size:13px">📍 ${rec?rec.checkInLoc||'—':'—'}</td>
       <td>${rec&&rec.checkOut?rec.checkOut:'—'}</td>
       <td style="color:var(--muted);font-size:13px">📍 ${rec&&rec.checkOutLoc?rec.checkOutLoc:'—'}</td>
       <td><span class="pill ${status==='present'?'pill-green':status==='late'?'pill-amber':'pill-red'}">${cap(status)}</span></td>
+      <td><button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="openStaffDetail(${u.id})">📊 View</button></td>
+    </tr>`;
+  });
+}
+
+function openStaffDetail(userId){
+  const u=USERS.find(x=>x.id===userId);if(!u)return;
+  const recs=attendance.filter(a=>a.userId===userId).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('detailStaffName').textContent=u.name;
+  document.getElementById('detailStaffMeta').innerHTML=`
+    <span style="margin-right:12px">👤 ${u.username}</span>
+    <span style="margin-right:12px">📱 ${u.mobile||'—'}</span>
+    <span class="pill ${u.role==='admin'?'pill-amber':'pill-green'}" style="font-size:11px">${u.role}</span>
+  `;
+  const totalDays=[...new Set(attendance.map(a=>a.date))].length;
+  const present=recs.filter(r=>r.status==='present').length;
+  const late=recs.filter(r=>r.status==='late').length;
+  const absent=totalDays-recs.length;
+  const rate=totalDays?Math.round((recs.length/totalDays)*100):0;
+  document.getElementById('detailSummary').innerHTML=`
+    <span class="pill pill-green">✅ Present: ${present}</span>
+    <span class="pill pill-amber">⚠️ Late: ${late}</span>
+    <span class="pill pill-red">❌ Absent: ${absent}</span>
+    <span class="pill pill-blue">📈 Rate: ${rate}%</span>
+  `;
+  const tbody=document.getElementById('detailAttBody');tbody.innerHTML='';
+  if(!recs.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No attendance records found.</td></tr>';
+  } else {
+    recs.forEach(r=>{
+      tbody.innerHTML+=`<tr>
+        <td style="font-weight:600">${r.date}</td>
+        <td style="font-family:monospace;color:var(--accent)">📱 ${r.loginMobile||u.mobile||'—'}</td>
+        <td>${r.checkIn||'—'}</td>
+        <td style="color:var(--muted);font-size:13px">📍 ${r.checkInLoc||'—'}</td>
+        <td>${r.checkOut||'—'}</td>
+        <td style="color:var(--muted);font-size:13px">📍 ${r.checkOutLoc||'—'}</td>
+        <td><span class="pill ${r.status==='present'?'pill-green':r.status==='late'?'pill-amber':'pill-red'}">${cap(r.status)}</span></td>
+      </tr>`;
+    });
+  }
+  document.getElementById('staffDetailModal').classList.add('open');
+}
+
+// ══════════════════════════════════════════
+//  DAILY ACTIVITY (admin tab)
+// ══════════════════════════════════════════
+function renderDailyActivity(){
+  const dateFilter = (document.getElementById('daDateFilter')||{}).value||'';
+  const nameFilter = ((document.getElementById('daNameFilter')||{}).value||'').toLowerCase().trim();
+  const staffOnly  = USERS.filter(u=>u.role!=='admin');
+
+  // Build rows: for every attendance record, join with user info
+  let rows = [];
+  attendance.forEach(a=>{
+    const u = staffOnly.find(x=>x.id===a.userId);
+    if(!u) return;
+    if(dateFilter && a.date !== dateFilter) return;
+    if(nameFilter && !u.name.toLowerCase().includes(nameFilter)) return;
+    rows.push({u, a});
+  });
+
+  // Sort: newest date first, then by name
+  rows.sort((x,y)=> x.a.date!==y.a.date ? y.a.date.localeCompare(x.a.date) : x.u.name.localeCompare(y.u.name));
+
+  // Summary counts
+  const totalPresent = rows.filter(r=>r.a.status==='present').length;
+  const totalLate    = rows.filter(r=>r.a.status==='late').length;
+  const totalDays    = [...new Set(rows.map(r=>r.a.date))].length;
+  const summary = document.getElementById('daSummary');
+  if(summary){
+    summary.innerHTML = `
+      <span class="pill pill-blue">📅 ${totalDays} Day${totalDays!==1?'s':''} Tracked</span>
+      <span class="pill pill-green">✅ Present: ${totalPresent}</span>
+      <span class="pill pill-amber">⚠️ Late: ${totalLate}</span>
+      <span class="pill pill-red">❌ Absent: ${staffOnly.length*totalDays - rows.length < 0 ? 0 : staffOnly.length*totalDays - rows.length}</span>
+    `;
+  }
+
+  const tbody = document.getElementById('daBody');
+  const empty = document.getElementById('daEmpty');
+  tbody.innerHTML = '';
+
+  if(!rows.length){
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+
+  rows.forEach(({u, a})=>{
+    const mobile = a.loginMobile || u.mobile || '—';
+    const statusClass = a.status==='present'?'pill-green':a.status==='late'?'pill-amber':'pill-red';
+    tbody.innerHTML += `<tr>
+      <td style="font-weight:600;white-space:nowrap">${a.date}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="width:26px;height:26px;font-size:10px;flex-shrink:0">${u.name[0]}</div>
+          <span style="font-weight:500">${u.name}</span>
+        </div>
+      </td>
+      <td style="font-family:monospace;font-size:13px;color:var(--accent)">📱 ${mobile}</td>
+      <td>${a.checkIn||'—'}</td>
+      <td style="color:var(--muted);font-size:13px">📍 ${a.checkInLoc||'—'}</td>
+      <td>${a.checkOut||'—'}</td>
+      <td style="color:var(--muted);font-size:13px">📍 ${a.checkOutLoc||'—'}</td>
+      <td><span class="pill ${statusClass}">${cap(a.status)}</span></td>
     </tr>`;
   });
 }
@@ -813,7 +1169,7 @@ function toggleCheckIn(){
   if(!checkedIn){
     checkedIn=true;checkInTime=timeStr;checkInLoc=locName;
     attendance.push({userId:currentUser.id,date:today,checkIn:timeStr,checkOut:null,
-      checkInLoc:locName,checkOutLoc:null,status:'late'});
+      checkInLoc:locName,checkOutLoc:null,status:'late',loginMobile:currentUser.mobile||'—'});
     pushNotif({icon:'🟢',message:`${currentUser.name} checked in`,detail:`${timeStr} · 📍 ${locName}`});
     toast('✅ Checked in · '+locName,'green');
   } else if(checkedIn&&!checkedOut){
@@ -1010,10 +1366,11 @@ async function reverseGeocode(lat, lng){
 // ══════════════════════════════════════════
 function renderStaff(filter=''){
   const tbody=document.getElementById('staffBody');tbody.innerHTML='';
-  USERS.filter(u=>u.name.toLowerCase().includes(filter)||u.username.toLowerCase().includes(filter)).forEach(u=>{
+  USERS.filter(u=>u.name.toLowerCase().includes(filter)||u.username.toLowerCase().includes(filter)||(u.mobile||'').includes(filter)).forEach(u=>{
     tbody.innerHTML+=`<tr>
       <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:26px;height:26px;font-size:10px">${u.name[0]}</div>${u.name}</div></td>
       <td style="color:var(--muted)">${u.username}</td>
+      <td style="color:var(--muted)">${u.mobile||'—'}</td>
       <td><span class="pill ${u.role==='admin'?'pill-amber':u.role==='supervisor'?'pill-blue':'pill-green'}">${u.role}</span></td>
       <td><span class="pill ${u.active?'pill-green':'pill-red'}">${u.active?'Active':'Inactive'}</span></td>
       <td>
@@ -1024,16 +1381,26 @@ function renderStaff(filter=''){
   });
 }
 function filterStaff(v){renderStaff(v.toLowerCase());}
-function openAddStaff(){editingStaffId=null;document.getElementById('staffModalTitle').textContent='Add Staff';['sfName','sfUser','sfPass'].forEach(id=>document.getElementById(id).value='');document.getElementById('sfRole').value='staff';document.getElementById('staffModal').classList.add('open');}
-function editStaff(id){editingStaffId=id;const u=USERS.find(x=>x.id===id);document.getElementById('staffModalTitle').textContent='Edit Staff';document.getElementById('sfName').value=u.name;document.getElementById('sfUser').value=u.username;document.getElementById('sfPass').value=u.password;document.getElementById('sfRole').value=u.role;document.getElementById('staffModal').classList.add('open');}
+function openAddStaff(){editingStaffId=null;document.getElementById('staffModalTitle').textContent='Add Staff';['sfName','sfUser','sfMobile','sfPass'].forEach(id=>document.getElementById(id).value='');document.getElementById('sfRole').value='staff';document.getElementById('staffModal').classList.add('open');}
+function editStaff(id){editingStaffId=id;const u=USERS.find(x=>x.id===id);document.getElementById('staffModalTitle').textContent='Edit Staff';document.getElementById('sfName').value=u.name;document.getElementById('sfUser').value=u.username;document.getElementById('sfMobile').value=u.mobile||'';document.getElementById('sfPass').value=u.password;document.getElementById('sfRole').value=u.role;document.getElementById('staffModal').classList.add('open');}
 function saveStaff(){
   const name=document.getElementById('sfName').value.trim();
   const user=document.getElementById('sfUser').value.trim();
+  const mobile=document.getElementById('sfMobile').value.trim();
   const pass=document.getElementById('sfPass').value.trim();
   const role=document.getElementById('sfRole').value;
-  if(!name||!user||!pass){toast('Fill all fields!','red');return;}
-  if(editingStaffId){const u=USERS.find(x=>x.id===editingStaffId);u.name=name;u.username=user;u.password=pass;u.role=role;toast('✅ Updated','green');}
-  else{if(USERS.find(x=>x.username===user)){toast('Username taken!','red');return;}USERS.push({id:Date.now(),username:user,password:pass,name,role,active:true});toast('✅ Staff added','green');}
+  if(!name||!user||!pass){toast('Fill all required fields!','red');return;}
+  if(mobile&&!/^\d{10}$/.test(mobile)){toast('Mobile must be 10 digits!','red');return;}
+  if(mobile&&USERS.find(x=>x.mobile===mobile&&x.id!==editingStaffId)){toast('Mobile number already registered!','red');return;}
+  if(editingStaffId){
+    const u=USERS.find(x=>x.id===editingStaffId);
+    u.name=name;u.username=user;u.mobile=mobile;u.password=pass;u.role=role;
+    toast('✅ Updated','green');
+  } else {
+    if(USERS.find(x=>x.username===user)){toast('Username taken!','red');return;}
+    USERS.push({id:Date.now(),username:user,password:pass,mobile,name,role,active:true});
+    toast('✅ Staff added','green');
+  }
   saveData();
   closeModal('staffModal');renderStaff();
 }
